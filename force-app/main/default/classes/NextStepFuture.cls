@@ -19,31 +19,43 @@
  */
 public with sharing class NextStepFuture {
 
-    /* 
-     * Question 1
-     * Update/Uncomment the template code to create a method
-     * Create a future method that updates all account and opportunities next step to 'Meeting in the future'
-     * Account Next Step field is a custom field
-     * Opportunity Next Step field is a standard field
-     * Update the corresponding test class AsynchronousTest and test method nextStepFuture_testUpdateAllNextStep to cover test this method
+    /*
+     * Future method to update all account and opportunities' next step to 'Meeting in the future'
      */
-    //[public | private ] [static] data_type method_name (input parameters) {
-    //  The body of the method
-    //}
+    @future
+    public static void updateAllNextStep() {
+        List<Account> accountsToUpdate = [SELECT Id, Next_Step__c FROM Account WHERE Next_Step__c != 'Meeting in the future'];
+        List<Opportunity> oppsToUpdate = [SELECT Id, NextStep FROM Opportunity WHERE NextStep != 'Meeting in the future'];
+        
+        // Update accounts' custom field "Next_Step__c"
+        for (Account acc : accountsToUpdate) {
+            acc.Next_Step__c = 'Meeting in the future';
+        }
+
+        // Update opportunities' standard field "NextStep"
+        for (Opportunity opp : oppsToUpdate) {
+            opp.NextStep = 'Meeting in the future';
+        }
+
+        // Perform DML operations
+        if (!accountsToUpdate.isEmpty()) {
+            update accountsToUpdate;
+        }
+        if (!oppsToUpdate.isEmpty()) {
+            update oppsToUpdate;
+        }
+    }
 
     /*
-    * Question 2
-    * Update/Uncomment the template code to create a method
-    * Create a method that inserts a big deal opportunity and updates the user role name to 'CRO'
-    * Update the corresponding test class AsynchronousTest and test method nextStepFuture_testCreateDealAndUpdateRole to cover test this method
-    */
-    //Mix DML Error happens when you try to perform DML operations on setup and non-setup objects in a single transaction.
+     * Method to insert a big deal opportunity and trigger the role update
+     */
     public static void createDealAndUpdateRole() {
+        // Insert big deal opportunity
         Opportunity bigDeal = new Opportunity();
         insertBigDeal(bigDeal);
 
-        UserRole[] roles = [SELECT Id, Name FROM UserRole WHERE Id = :UserInfo.getUserRoleId() OR Name = 'CRO' LIMIT 1];
-        updateUserRoleName(roles);
+        // Call a future method to update user role asynchronously to avoid MIXED_DML_OPERATION
+        updateUserRoleToCRO();
     }
 
     // Helper method to insert big deal
@@ -56,15 +68,22 @@ public with sharing class NextStepFuture {
         insert opp;
     }
 
+    /*
+     * Future method to update user role to 'CRO' to avoid MIXED_DML_OPERATION
+     */
+    @future
+    public static void updateUserRoleToCRO() {
+        UserRole[] roles = [SELECT Id, Name FROM UserRole WHERE Id = :UserInfo.getUserRoleId() OR Name = 'CRO' LIMIT 1];
+        updateUserRoleName(roles);
+    }
 
     // Helper method to update role name
     private static void updateUserRoleName(UserRole[] roles){
         UserRole role;
         if (roles.isEmpty()) {
             role = new UserRole();
-            role.portalType = 'None'; 
-            role.CaseAccessForAccountOwner = 'Edit'; 
-            // role.OpportunityAccessForAccountOwner = 'Edit'; //This may need to be uncommented depending on your orgs Organization Wide Defaults(OWD) settings. If you are receiving FIELD_INTEGRITY_EXCEPTION, field integrity exception: unknown (Opportunity access level below organization default): [unknown], uncomment this line.
+            role.Name = 'CRO';
+            // Set other role fields if needed
         } else {
             role = roles[0];
         }

@@ -19,16 +19,26 @@
  * 
  * Note: To make full use of this class, ensure that the NextStepBatch class is implemented and operational.
  */
-public with sharing class NextStepSchedule {
+public with sharing class NextStepSchedule implements Schedulable {
 
     /*
-     * Update/Uncomment the template code to create a method
-     * Execute the batch job NextStepBatch using the Database.executeBatch method
-     * Configure and schedule the job using the Apex Scheduler in Salesforce Setup
-     * Code to execute the batch job should not need to change other than uncommenting the code
+     * This method is invoked when the scheduled job runs.
+     * It executes the NextStepBatch using the Database.executeBatch method.
      */
-    //[public | private ] [static] data_type execute (input parameters) {
-        //NextStepBatch batch = new NextStepBatch(); 
-        //Database.executeBatch(batch);
-    //}
+    public void execute(SchedulableContext sc) {
+        // Create an instance of the NextStepBatch class
+        NextStepBatch batch = new NextStepBatch(); 
+
+        // Execute the batch job
+        Database.executeBatch(batch);
+    }
+
+    /*
+     * To schedule this class, you can do so using the Salesforce Setup, 
+     * or programmatically by running the following code in the Developer Console:
+     * 
+     * String cronExp = '0 0 12 * * ?'; // Example CRON expression for daily execution at noon
+     * NextStepSchedule scheduleJob = new NextStepSchedule();
+     * System.schedule('Daily NextStepBatch Job', cronExp, scheduleJob);
+     */
 }
